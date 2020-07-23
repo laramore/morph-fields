@@ -22,7 +22,7 @@ use Laramore\Contracts\Field\{
     Field, RelationField, Constraint\Constraint
 };
 
-trait ToMorphOneRelation
+trait ToOneMorphRelation
 {
     use ModelRelation, IndexableConstraints, MorphConstraints;
 

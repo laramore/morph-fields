@@ -19,12 +19,12 @@ use Laramore\Contracts\Field\{
     ManyRelationField, MorphReversedRelationField
 };
 use Laramore\Facades\Operator;
-use Laramore\Traits\Field\HasMorphOneRelation;
+use Laramore\Traits\Field\HasOneMorphRelation;
 
-class MorphHasMany extends BaseField implements MorphReversedRelationField, ManyRelationField
+class HasManyMorph extends BaseField implements MorphReversedRelationField, ManyRelationField
 {
-    use HasMorphOneRelation {
-        HasMorphOneRelation::cast as public castModel;
+    use HasOneMorphRelation {
+        HasOneMorphRelation::cast as public castModel;
     }
 
     /**

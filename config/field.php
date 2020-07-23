@@ -12,7 +12,7 @@ return [
     */
 
     'configurations' => [
-        'morph_has_many' => [
+        'has_many_morph' => [
             'type' => 'reversed_relation',
             'proxy' => [
                 'configurations' => [
@@ -27,13 +27,13 @@ return [
                 ],
             ],
         ],
-        'morph_many_to_one' => [
+        'many_morph_to_one' => [
             'type' => 'relation',
             'target_model' => Laramore\Contracts\Eloquent\LaramoreModel::class,
             'fields' => [
                 'type' => Laramore\Fields\ModelEnum::class,
                 'id' => Laramore\Fields\Integer::class,
-                'reversed' => Laramore\Fields\Reversed\MorphHasMany::class,
+                'reversed' => Laramore\Fields\Reversed\HasManyMorph::class,
             ],
             'templates' => [
                 'type' => '${name}_${identifier}',
