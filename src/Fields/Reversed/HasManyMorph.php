@@ -10,18 +10,19 @@
 
 namespace Laramore\Fields\Reversed;
 
+use Illuminate\Support\Collection;
 use Laramore\Elements\OperatorElement;
 use Laramore\Fields\BaseField;
 use Laramore\Contracts\Eloquent\{
     LaramoreModel, LaramoreBuilder, LaramoreCollection
 };
 use Laramore\Contracts\Field\{
-    ManyRelationField, MorphReversedRelationField
+    ManyRelationField, ReversedMorphRelationField
 };
 use Laramore\Facades\Operator;
 use Laramore\Traits\Field\HasOneMorphRelation;
 
-class HasManyMorph extends BaseField implements MorphReversedRelationField, ManyRelationField
+class HasManyMorph extends BaseField implements ReversedMorphRelationField, ManyRelationField
 {
     use HasOneMorphRelation {
         HasOneMorphRelation::cast as public castModel;
@@ -50,17 +51,17 @@ class HasManyMorph extends BaseField implements MorphReversedRelationField, Many
      * Add a where in condition from this field.
      *
      * @param  LaramoreBuilder    $builder
-     * @param  LaramoreCollection $value
+     * @param  Collection $value
      * @param  string             $boolean
      * @param  boolean            $notIn
      * @return LaramoreBuilder
      */
-    public function whereIn(LaramoreBuilder $builder, LaramoreCollection $value=null,
+    public function whereIn(LaramoreBuilder $builder, Collection $value=null,
                             string $boolean='and', bool $notIn=false): LaramoreBuilder
     {
         $attname = $this->getTarget()->getAttribute()->getNative();
 
-        return $this->whereNull($builder, $value, $boolean, $notIn, function ($query) use ($attname, $value) {
+        return $this->whereNull($builder, $boolean, $notIn, function ($query) use ($attname, $value) {
             return $query->whereIn($attname, $value);
         });
     }
@@ -69,11 +70,11 @@ class HasManyMorph extends BaseField implements MorphReversedRelationField, Many
      * Add a where not in condition from this field.
      *
      * @param  LaramoreBuilder    $builder
-     * @param  LaramoreCollection $value
+     * @param  Collection $value
      * @param  string             $boolean
      * @return LaramoreBuilder
      */
-    public function whereNotIn(LaramoreBuilder $builder, LaramoreCollection $value=null, string $boolean='and'): LaramoreBuilder
+    public function whereNotIn(LaramoreBuilder $builder, Collection $value=null, string $boolean='and'): LaramoreBuilder
     {
         return $this->whereIn($builder, $value, $boolean, true);
     }
@@ -134,7 +135,9 @@ class HasManyMorph extends BaseField implements MorphReversedRelationField, Many
         }
 
         $modelClass = $this->getTargetModel();
-        $foreignAttname = $this->getTargetAttribute()->getNative();
+
+        $foreignField = $this->getTargetAttribute()->getAttribute();
+        $foreignAttname = $foreignField->getNative();
 
         $primaryField = $modelClass::getMeta()->getPrimary()->getAttribute();
         $primaryAttname = $primaryField->getNative();
@@ -143,7 +146,12 @@ class HasManyMorph extends BaseField implements MorphReversedRelationField, Many
         $valueIds = $value->map(function ($subModel) use ($primaryAttname) {
             return $subModel->getAttribute($primaryAttname);
         });
-        $default = \is_null($this->getDefault()) ? null : $this->default->getAttribute($foreignAttname);
+
+        $default = $this->getDefault();
+
+        if (!\is_null($default)) {
+            $default = $foreignField->get($default);
+        }
 
         $primaryField->addBuilderOperation(
             $modelClass::where($foreignAttname, Operator::equal(), $foreignId),

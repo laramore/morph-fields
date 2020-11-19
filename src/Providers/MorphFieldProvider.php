@@ -25,6 +25,10 @@ class MorphFieldProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
+            __DIR__ . '/../../config/type.php', 'type',
+        );
+
+        $this->mergeConfigFrom(
             __DIR__.'/../../config/field.php', 'field',
         );
 
@@ -40,6 +44,10 @@ class MorphFieldProvider extends ServiceProvider
      */
     public function boot()
     {
+        $this->publishes([
+            __DIR__ . '/../../config/type.php' => $this->app->make('path.config') . '/type.php',
+        ]);
+        
         $this->publishes([
             __DIR__.'/../../config/field.php' => $this->app->make('path.config').'/field.php',
         ]);

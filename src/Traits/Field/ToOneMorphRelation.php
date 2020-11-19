@@ -10,6 +10,7 @@
 
 namespace Laramore\Traits\Field;
 
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Laramore\Elements\OperatorElement;
 use Laramore\Facades\{
@@ -253,6 +254,7 @@ trait ToOneMorphRelation
     protected function setTargetModels()
     {
         $targetModel = $this->getTargetModel();
+        
         $callback = \interface_exists($targetModel) ? function ($model) use ($targetModel) {
             return (new \ReflectionClass($model))->implementsInterface($targetModel);
         } : function ($model) use ($targetModel) {
@@ -262,6 +264,10 @@ trait ToOneMorphRelation
         $elements = \array_filter(\array_keys(Meta::all()), function ($model) use ($callback) {
             return !\is_subclass_of($model, Pivot::class) && $callback($model);
         });
+
+        if (\count($elements) === 0) {
+            throw new \LogicException("The morph field `{$this->getQualifiedName()}` requires to target at least one model.");
+        }
 
         $this->getField('type')->elements($elements);
     }
@@ -403,12 +409,11 @@ trait ToOneMorphRelation
      * Add a where null condition from this field.
      *
      * @param  LaramoreBuilder $builder
-     * @param  mixed           $value
      * @param  string          $boolean
      * @param  boolean         $not
      * @return LaramoreBuilder
      */
-    public function whereNull(LaramoreBuilder $builder, $value=null, string $boolean='and', bool $not=false): LaramoreBuilder
+    public function whereNull(LaramoreBuilder $builder, string $boolean='and', bool $not=false): LaramoreBuilder
     {
         $builder = $this->getField('type')->addBuilderOperation($builder, 'whereNull', $boolean, $not);
 
@@ -419,25 +424,24 @@ trait ToOneMorphRelation
      * Add a where not null condition from this field.
      *
      * @param  LaramoreBuilder $builder
-     * @param  mixed           $value
      * @param  string          $boolean
      * @return LaramoreBuilder
      */
-    public function whereNotNull(LaramoreBuilder $builder, $value=null, string $boolean='and'): LaramoreBuilder
+    public function whereNotNull(LaramoreBuilder $builder, string $boolean='and'): LaramoreBuilder
     {
-        return $this->whereNull($builder, $value, $boolean, true);
+        return $this->whereNull($builder, $boolean, true);
     }
 
     /**
      * Add a where in condition from this field.
      *
      * @param  LaramoreBuilder    $builder
-     * @param  LaramoreCollection $value
+     * @param  Collection $value
      * @param  string             $boolean
      * @param  boolean            $notIn
      * @return LaramoreBuilder
      */
-    public function whereIn(LaramoreBuilder $builder, LaramoreCollection $value=null,
+    public function whereIn(LaramoreBuilder $builder, Collection $value=null,
                             string $boolean='and', bool $notIn=false): LaramoreBuilder
     {
         $builder = $this->getField('type')->addBuilderOperation($builder, 'whereNull', $boolean, $not);
@@ -449,11 +453,11 @@ trait ToOneMorphRelation
      * Add a where not in condition from this field.
      *
      * @param  LaramoreBuilder    $builder
-     * @param  LaramoreCollection $value
+     * @param  Collection $value
      * @param  string             $boolean
      * @return LaramoreBuilder
      */
-    public function whereNotIn(LaramoreBuilder $builder, LaramoreCollection $value=null, string $boolean='and'): LaramoreBuilder
+    public function whereNotIn(LaramoreBuilder $builder, Collection $value=null, string $boolean='and'): LaramoreBuilder
     {
         return $this->whereIn($builder, $value, $boolean, true);
     }
@@ -470,12 +474,34 @@ trait ToOneMorphRelation
     public function where(LaramoreBuilder $builder, OperatorElement $operator,
                           $value=null, string $boolean='and'): LaramoreBuilder
     {
-        if ($operator->needs === 'collection') {
-            return $this->whereIn($builder, $value, $boolean, ($operator === Operator::notIn()));
+        [$operatorType, $operatorId] = $this->getMorphOperators($operator);
+
+        $modelClass = $value::getMeta()->getModelClass();
+
+        $valueType = $this->getField('type')->getElement($modelClass);
+        $valueId = $this->getTarget($modelClass)->getAttribute()->get($value);
+
+        $this->getField('type')->addBuilderOperation($builder, 'where', $operatorType, $valueType, $boolean);
+        return $this->getField('id')->addBuilderOperation($builder, 'where', $operatorId, $valueId, $boolean);
+    }
+
+    /**
+     * Return morph operators.
+     *
+     * @param OperatorElement $operator
+     * @return array<OperatorElement>
+     */
+    public function getMorphOperators(OperatorElement $operator): array
+    {
+        if (!$operator->needs(OperatorElement::MIXED_TYPE)) {
+            if ($operator->needs(OperatorElement::NUMERIC_TYPE)) {
+                $operatorType = Operator::find($operator->fallback);
+            } else if ($operator->needs(OperatorElement::STRING_TYPE)) {
+                $operatorId = Operator::find($operator->fallback);
+            }
         }
 
-        return $this->getField('type')->addBuilderOperation($builder, 'where', $operator, $this->getValue('type', $value), $boolean);
-        return $this->getField('id')->addBuilderOperation($builder, 'where', $operator, $this->getValue('id', $value), $boolean);
+        return [$operatorType ?? $operator, $operatorId ?? $operator];
     }
 
     /**

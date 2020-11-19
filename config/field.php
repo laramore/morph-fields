@@ -1,5 +1,7 @@
 <?php
 
+namespace Laramore\Fields;
+
 return [
 
     /*
@@ -12,8 +14,8 @@ return [
     */
 
     'configurations' => [
-        'has_many_morph' => [
-            'type' => 'reversed_relation',
+        Reversed\HasManyMorph::class => [
+            'type' => 'reversed_morph_relation',
             'proxy' => [
                 'configurations' => [
                     'attach' => [],
@@ -27,13 +29,13 @@ return [
                 ],
             ],
         ],
-        'many_morph_to_one' => [
-            'type' => 'relation',
-            'target_model' => Laramore\Contracts\Eloquent\LaramoreModel::class,
+        ManyMorphToOne::class => [
+            'type' => 'morph_relation',
+            'target_model' => \Laramore\Contracts\Eloquent\LaramoreModel::class,
             'fields' => [
-                'type' => Laramore\Fields\ModelEnum::class,
-                'id' => Laramore\Fields\Integer::class,
-                'reversed' => Laramore\Fields\Reversed\HasManyMorph::class,
+                'type' => ModelEnum::class,
+                'id' => Integer::class,
+                'reversed' => Reversed\HasManyMorph::class,
             ],
             'templates' => [
                 'type' => '${name}_${identifier}',
