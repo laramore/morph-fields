@@ -10,9 +10,8 @@
    },
     "require": {
         "php": ">=7.0.8",
-        "symfony/http-kernel": ">=3.4",
-        "laramore/text-fields": ">=0.2",
-        "laramore/laramore": ">=0.16"
+        "laramore/text-fields": ">=0.4",
+        "laramore/laramore": ">=0.18"
     },
     "authors": [
         {
