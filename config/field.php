@@ -15,7 +15,9 @@ return [
 
     'configurations' => [
         Reversed\HasManyMorph::class => [
-            'type' => 'reversed_morph_relation',
+            'options' => [
+                'visible', 'fillable',
+            ],
             'proxy' => [
                 'configurations' => [
                     'attach' => [],
@@ -30,7 +32,9 @@ return [
             ],
         ],
         ManyMorphToOne::class => [
-            'type' => 'morph_relation',
+            'options' => [
+                'visible', 'fillable', 'required',
+            ],
             'target_model' => \Laramore\Contracts\Eloquent\LaramoreModel::class,
             'fields' => [
                 'type' => ModelEnum::class,

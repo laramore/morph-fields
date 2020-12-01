@@ -72,6 +72,13 @@ class ManyToMany extends BaseComposed implements ManyRelationField
     protected $pivotName;
 
     /**
+     * Pivot namespace.
+     *
+     * @var string
+     */
+    protected $pivotNamespace;
+
+    /**
      * Indicate if this use a specific pivot.
      *
      * @var boolean
@@ -112,15 +119,7 @@ class ManyToMany extends BaseComposed implements ManyRelationField
     {
         parent::__construct($options);
 
-        $this->pivotName($this->getConfig('templates.pivot'), $this->getConfig('templates.reversed_pivot'));
-
-        if (\is_null($this->pivotName)) {
-            throw new ConfigException($this->getConfigPath('templates.pivot'), ['any string name'], null);
-        }
-
-        if (\is_null($this->reversedPivotName)) {
-            throw new ConfigException($this->getConfigPath('templates.reversed_pivot'), ['any string name'], null);
-        }
+        $this->pivotName($this->templates['pivot'], $this->templates['reversed_pivot']);
     }
 
     /**
@@ -173,7 +172,7 @@ class ManyToMany extends BaseComposed implements ManyRelationField
         if ($reversedName) {
             $this->reversedName($reversedName);
         } else if ($model === 'self') {
-            $this->reversedName($this->getConfig('templates.self_reversed'));
+            $this->reversedName($this->templates['self_reversed']);
         }
 
         return $this;
@@ -240,7 +239,7 @@ class ManyToMany extends BaseComposed implements ManyRelationField
         $offMeta = $this->getMeta();
         $offName = Str::snake($offMeta->getModelClassName());
         $onName = Str::snake(Str::singular($this->name));
-        $namespaceName = $this->getConfig('pivot_namespace');
+        $namespaceName = $this->pivotNamespace;
         $pivotClassName = ucfirst($offName).ucfirst($onName);
         $pivotClass = "$namespaceName\\$pivotClassName";
 
@@ -269,7 +268,7 @@ class ManyToMany extends BaseComposed implements ManyRelationField
             $onField = ManyToOne::field()->on($this->getTargetModel());
 
             if ($this->isOnSelf()) {
-                $onField->reversedName($this->getConfig('templates.self_pivot_reversed'));
+                $onField->reversedName($this->templates['self_pivot_reversed']);
             }
 
             $this->pivotMeta->setField(
